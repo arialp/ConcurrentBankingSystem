@@ -17,14 +17,34 @@ int main(int argc, char *argv[]){
     exit(EXIT_FAILURE);
   }
   
-  int num_accounts, num_transactions;
-  fscanf(fp, "%d %d\n", &num_accounts, &num_transactions);
+  char header_line[128];
+  int num_accounts = 0, num_transactions = 0;
+  
+  if(!fgets(header_line, sizeof(header_line), fp)){
+    fprintf(stderr, "Failed to read header line\n");
+    exit(EXIT_FAILURE);
+  }
+  
+  char *tok = strtok(header_line, " ");
+  if(!tok){
+    fprintf(stderr, "Invalid header format\n");
+    exit(EXIT_FAILURE);
+  }
+  num_accounts = (int)strtol(tok, NULL, 10);
+  
+  tok = strtok(NULL, " ");
+  if(!tok){
+    fprintf(stderr, "Invalid header format\n");
+    exit(EXIT_FAILURE);
+  }
+  num_transactions = (int)strtol(tok, NULL, 10);
   
   // Shared memory setup
   int shm_accounts =
       create_shared_memory(SHM_KEY_ACCOUNTS, sizeof(Account) * MAX_ACCOUNTS);
-  int shm_logs = create_shared_memory(SHM_KEY_LOGS, sizeof(TransactionLog)
-      * MAX_TRANSACTIONS);
+  int shm_logs = create_shared_memory(SHM_KEY_LOGS,
+                                      sizeof(TransactionLog) * MAX_TRANSACTIONS
+                                          * 2);
   
   Account *accounts = (Account *)attach_shared_memory(shm_accounts);
   TransactionLog *logs = (TransactionLog *)attach_shared_memory(shm_logs);
@@ -32,9 +52,27 @@ int main(int argc, char *argv[]){
   initialize_accounts(accounts, num_accounts);
   
   // Init account balances
+  char acc_line[128];
   for(int i = 0; i < num_accounts; i++){
-    int acc_num, bal;
-    fscanf(fp, "%d %d\n", &acc_num, &bal);
+    if(!fgets(acc_line, sizeof(acc_line), fp)){
+      fprintf(stderr, "Failed to read account line %d\\n", i);
+      exit(EXIT_FAILURE);
+    }
+    
+    char *acc_tok = strtok(acc_line, " ");
+    if(!acc_tok){
+      fprintf(stderr, "Invalid account line %d\\n", i);
+      exit(EXIT_FAILURE);
+    }
+    int acc_num = (int)strtol(acc_tok, NULL, 10);
+    
+    acc_tok = strtok(NULL, " ");
+    if(!acc_tok){
+      fprintf(stderr, "Invalid account line %d\\n", i);
+      exit(EXIT_FAILURE);
+    }
+    int bal = (int)strtol(acc_tok, NULL, 10);
+    
     accounts[acc_num].balance = bal;
   }
   

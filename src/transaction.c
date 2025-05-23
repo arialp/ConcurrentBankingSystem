@@ -1,31 +1,69 @@
 #include "transaction.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <limits.h>
+
+static int parse_int(const char *str, int *valid){
+  char *endptr;
+  errno = 0;
+  long val = strtol(str, &endptr, 10);
+  if(errno != 0 || *endptr != '\0' || val < INT_MIN || val > INT_MAX){
+    *valid = 0;
+    return 0;
+  }
+  *valid = 1;
+  return (int)val;
+}
 
 int parse_transaction(const char *line, TransactionLog *log, int id){
-  char type_char;
-  int acc1 = -1, acc2 = -1, amount = 0;
+  char clean_line[128];
+  strncpy(clean_line, line, sizeof(clean_line));
+  clean_line[sizeof(clean_line) - 1] = '\0';
   
-  int matched = sscanf(line, "%c %d %d %d", &type_char, &acc1, &acc2, &amount);
+  size_t len = strlen(clean_line);
+  while(len > 0
+      && (clean_line[len - 1] == '\n' || clean_line[len - 1] == '\r')){
+    clean_line[--len] = '\0';
+  }
+  
+  char *tokens[4];
+  char *token = strtok(clean_line, " ");
+  int count = 0;
+  while(token && count < 4){
+    tokens[count++] = token;
+    token = strtok(NULL, " ");
+  }
+  
+  if(count != 4) return 0;
+  
+  char type_char = tokens[0][0];
+  int ok1 = 0, ok2 = 0, ok3 = 0;
+  
+  int a1 = parse_int(tokens[1], &ok1);
+  int a2 = parse_int(tokens[2], &ok2);
+  int amount = parse_int(tokens[3], &ok3);
+  
+  if(!(ok1 && ok2 && ok3)) return 0;
   
   log->transaction_id = id;
   log->amount = amount;
   log->success = 0;
+  log->is_retry = 0;
   
   switch(type_char){
-    case 'D':if(matched != 4) return 0;
-      log->type = DEPOSIT;
-      log->from_account = -1;      // Deposit işleminde kullanılmaz
-      log->to_account = acc1;      // acc1 → hedef hesap
+    case 'D':log->type = DEPOSIT;
+      log->from_account = -1;
+      log->to_account = a1;
       return 1;
-    case 'W':if(matched != 4) return 0;
-      log->type = WITHDRAW;
-      log->from_account = acc1;    // acc1 → kaynak hesap
-      log->to_account = -1;        // Withdraw işleminde kullanılmaz
+    case 'W':log->type = WITHDRAW;
+      log->from_account = a1;
+      log->to_account = -1;
       return 1;
-    case 'T':if(matched != 4) return 0;
-      log->type = TRANSFER;
-      log->from_account = acc1;    // acc1 → kaynak
-      log->to_account = acc2;      // acc2 → hedef
+    case 'T':log->type = TRANSFER;
+      log->from_account = a1;
+      log->to_account = a2;
       return 1;
     default:return 0;
   }
@@ -34,8 +72,6 @@ int parse_transaction(const char *line, TransactionLog *log, int id){
 void log_transaction(TransactionLog *logs, int id, TransactionLog t){
   logs[id] = t;
 }
-
-#include <stdio.h>
 
 void print_transaction_log(TransactionLog *logs, int count){
   printf("\n\033[1mTransaction Log:\033[0m\n");
@@ -59,25 +95,11 @@ void print_transaction_log(TransactionLog *logs, int count){
         break;
     }
     
-    // Status coloring
     const char *status_str =
         t->success ? "\033[32mSuccess\033[0m" : "\033[31mFail\033[0m";
     const char *retry_str = t->is_retry ? " \033[33m(Retry)\033[0m" : "";
     
-    // FROM / TO hesap numaraları
-    char from_buf[16];
-    char to_buf[16];
-    snprintf(from_buf, sizeof(from_buf), "%s", t->from_account >= 0 ?
-                                               (sprintf((char[16]){0}, "%d",
-                                                        t->from_account), (char[16]){
-                                                   0}) : "-");
-    
-    snprintf(to_buf, sizeof(to_buf), "%s", t->to_account >= 0 ?
-                                           (sprintf((char[16]){0}, "%d",
-                                                    t->to_account), (char[16]){
-                                               0}) : "-");
-    
-    // Alternatif güvenli ve net versiyon:
+    char from_buf[16], to_buf[16];
     if(t->from_account >= 0)
       snprintf(from_buf, sizeof(from_buf), "%d", t->from_account);
     else

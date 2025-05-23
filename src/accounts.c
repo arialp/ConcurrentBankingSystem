@@ -1,7 +1,7 @@
 #include "accounts.h"
 #include "ipc.h"
 
-extern int account_sems; // semaphore ID, main.c'de tanımlanacak
+extern int account_sems;
 
 void initialize_accounts(Account *accounts, int num_accounts){
   for(int i = 0; i < num_accounts; i++){
