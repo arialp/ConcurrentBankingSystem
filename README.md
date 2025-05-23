@@ -4,7 +4,7 @@ This project implements a concurrent banking simulation using process creation, 
 
 ---
 
-## 🧰 Requirements
+## Requirements
 
 To build and run the project, you will need:
 
@@ -17,6 +17,7 @@ To build and run the project, you will need:
   - `stdlib.h`
   - `string.h`
   - `errno.h`
+  - `limits.h`
   - `sys/types.h`
   - `sys/ipc.h`
   - `sys/shm.h`
@@ -25,7 +26,7 @@ To build and run the project, you will need:
 
 ---
 
-## ⚙️ Build Instructions
+## Build Instructions
 
 1. Clone the repository and navigate into it.
 2. Create a build directory and compile the project:
@@ -41,7 +42,7 @@ The binary will be available at: `build/bin/banking_system`
 
 ---
 
-## ▶️ Running the Program
+## Running the Program
 
 Prepare a transaction file like `transactions.txt`, then run:
 
@@ -51,7 +52,7 @@ Prepare a transaction file like `transactions.txt`, then run:
 
 ---
 
-## 📄 Input File Format (`transactions.txt`)
+## Input File Format (`transactions.txt`)
 
 ```
 <num_accounts> <num_transactions>
@@ -80,7 +81,7 @@ W 1 0 200
 
 ---
 
-## ✅ Output
+## Output
 
 Program prints:
 
@@ -89,7 +90,7 @@ Program prints:
 
 ---
 
-## 📁 File Structure
+## File Structure
 
 ```
 .
