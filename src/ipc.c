@@ -2,7 +2,6 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
-#include <errno.h>
 
 // Wrapper for shared memory creation
 int create_shared_memory(key_t key, size_t size){

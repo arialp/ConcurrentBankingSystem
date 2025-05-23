@@ -38,7 +38,8 @@ typedef struct {
   int from_account;
   int to_account;
   int amount;
-  int success; // 1 if successful, 0 if failed
+  int success;
+  int is_retry;
 } TransactionLog;
 
 #endif // COMMON_H
